@@ -1,0 +1,177 @@
+-------------------------------------Question 1------------------------------------------------------
+
+My relation schema is as follow
+
+1) From the file age-education i drop the columns Table Name and Distt. Code.
+    because this value is same for all.
+2) For particular State code area name is same in all the table. so I create a table 
+    in which I store state_code and area_name.
+   
+   state_area(Scode, areaName)
+
+3) In file age-education.csv Satate Code, Type(total/Rural/Urban), Age-Group uniquely identify the
+    whole row so I can use it as a primary key.
+   So, I create table called 
+   
+  combine_key_id(id,Scode, type, age_group)
+  
+  basically i combine whole multiple column primary key to single column value primary key
+  which is id. So now I use Id as primary key.
+
+4) And this  motivate me to create other tables from age-education.csv file like.
+
+    populatoin_grp_by_age(id,m_count,f_count)
+    illiterate_grp_by_age(id,m_count,f_count)
+    literate_grp_by_age(id,m_count,f_count)
+    liter_wot_edu_grp_by_age(id,m_count,f_count)
+    below_prmry_grp_by_age(id,m_count,f_count)
+    primary_grp_by_age(id,m_count,f_count)
+    middle_grp_by_age(id,m_count,f_count)
+    matrx_second_grp_by_age(id,m_count,f_count)
+    high_schl_grp_by_age(id,m_count,f_count)
+    non_tech_diplma_grp_by_age(id,m_count,f_count)
+    tech_diplma_grp_by_age(id,m_count,f_count)
+    graduate_plus_grp_by_age(id,m_count,f_count)
+    unclassified_grp_by_age(id,m_count,f_count)
+
+    m_count = male_count, f_count = female_count
+
+    here basically I create a saparate table for every different column Group from file.
+    and id is my primary key for all of this tables.
+
+5) In every table type = Rural/Urban ,  I drop all the values where type= Total because no need to keep total sum value, we can calculate sum by simple normal group by query.
+
+
+6) other files multilingual-education.csv and mutlilingual-age.csv gives one table each
+    which is 
+    from file multilingual-age.csv file
+    
+    distribution_by_age_grp(Scode,type,age_grp,male2lang,female2lang,male3lang,female3lang)
+
+    and from file multilingual-education.csv 
+ 
+    distribution_by_educ_lvl(Scode,type,education_level,male2lang,female2lang,male3lang,female3lang)
+    
+   male2lang = number of male speaking 2nd language
+   female2lang = number of female speaking 2nd language
+
+   male3lang = number of male speaking 3rd language
+   female3lang = number of female speaking 3rd language
+
+  In both this file I not keep column of tatal person count because I can calculate this thing from sum of male count and female count
+  and in both this table Scode is primary key which is forgion key referencing to table state_area;
+
+7) And my last table is for total population of every state. 
+    
+    population_state(Scode, male_count, female_count)  
+
+   In this table I only consider state's ( Scode = 00  is not in this table becuase this Scode refer to INDIA  becuase for male_count, female_count in INDIA I can you sum() method for this table)
+   and for overall population (male_count + female_count) I can run a simple query and get it.
+
+8) I made a table of avg_age_table with columns age_group and avg_value. age_group for storing age interval and avg_value for storing average value of that interval.
+ 
+------------------------Question 2-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+I use the above mention schema and then Create tables in sqlite3 
+and then insert the each DataFram in corresponding table.
+
+First I make connection to my database population.db ( if not exist then it will automatically create new one)
+then create tables inside the database 
+then insert all data in tables.
+
+
+
+------------------------Question 3-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ 1)
+#### query
+
+with temp1(Scode,count3) as
+(select Scode, sum(male3lang+female3lang) from distribution_by_educ_lvl where Scode != 0 group by Scode),
+temp2(Scode,countAll) as 
+(select Scode, m_count + f_count from population_stateWise)
+select sa.areaName as State, (t1.count3*1.0/t2.countAll)*100 as percent from temp1 as t1, temp2 as t2,state_area as sa 
+where t1.Scode=t2.Scode and t1.Scode= sa.Scode order by percent;
+
+######ANS : 
+
+[('UTTAR PRADESH', 2.4960545354903783), ('RAJASTHAN', 2.840966308247116), ('BIHAR', 2.986647806753104), 
+('CHHATTISGARH', 3.0423252150952207), ('MADHYA PRADESH', 3.3537643103664383), ('UTTARAKHAND', 3.6399997144639475), 
+('WEST BENGAL', 6.0994368570572925), ('TAMIL NADU', 6.5309105586189755), ('JHARKHAND', 8.893634298927001), 
+('HARYANA', 9.062416203057639), ('MIZORAM', 9.42967865651482), ('HIMACHAL PRADESH', 9.952040919488121), 
+('TRIPURA', 10.405950923768827), ('PUDUCHERRY', 11.282476182997277), ('ANDHRA PRADESH', 14.31568073677072), 
+('NCT OF DELHI', 15.796630450392934), ('MEGHALAYA', 17.522731723364103), ('KERALA', 18.624111355122054), 
+('KARNATAKA', 24.170236867823068), ('ODISHA', 25.45466123990684), ('ASSAM', 26.11578456363055), ('GUJARAT', 27.41729557457043), 
+('DAMAN & DIU', 27.761082356616935), ('LAKSHADWEEP', 30.347587362151597), ('JAMMU & KASHMIR', 32.060865769758195), 
+('MAHARASHTRA', 33.74409528197155), ('ANDAMAN & NICOBAR ISLANDS', 37.54548965923155), 
+('DADRA & NAGAR HAVELI', 38.50262867716586), ('MANIPUR', 41.240229512352784), ('NAGALAND', 51.77674826712331), 
+('PUNJAB', 55.41480985453157), ('ARUNACHAL PRADESH', 56.251052411349924), ('SIKKIM', 57.447791187679854), 
+('CHANDIGARH', 60.466909848879624), ('GOA', 96.30494773901388)]
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+2) 
+####query
+
+with temp(age_grp,count) as 
+(select age_grp, sum(male2lang+female2lang) from distribution_by_age_grp where Scode != 0 group by age_grp)
+select age_grp from temp where count = (select max(count) from temp);
+
+####ANS
+
+[('30-49',)]
+
+
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+3)
+####query 
+
+with temp0(age_grp,male,female) as 
+(select age_group,sum(m_count),sum(f_count) from populatoin_grp_by_age as pop, combine_key_id as cki
+ where cki.id = pop.id and Scode = 0 group by cki.age_group), 
+ m_by_f(age_grp,value1) as (select age_grp, max(male*1.0/female) from temp0),
+ f_by_m(age_grp,value2) as (select age_grp,max(female*1.0/male) from temp0)
+ select * from m_by_f 
+ UNION ALL 
+ select * from f_by_m
+
+###ANS
+
+[('18', 1.161050268927912), ('80+', 1.1365739316898495)]
+
+explanation : first tuple is for male/female max ratio and second tuple is female/male max ratio
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+4)
+####query
+
+with count2(value2) as 
+(select sum(male2lang+female2lang) from distribution_by_age_grp where Scode = 0),
+count1(value1) as (select sum(m_count+f_count) from population_stateWise)
+select value1-value2 from count2,count1;
+
+####ANS
+
+[(895866207,)]
+
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+5)
+###query
+
+with temp1(Scode,age_grp,sum_pop) as
+(select cki.Scode, cki.age_group,sum(pop.m_count+pop.f_count) from combine_key_id as cki, populatoin_grp_by_age as pop
+where cki.id=pop.id and Scode != 0 group by Scode,age_group),
+temp2(Scode,count) as 
+(select Scode,sum(m_count+f_count) from populatoin_grp_by_age as pop1,combine_key_id as cki1 
+where cki1.id=pop1.id and cki1.age_group != "Age not stated" and cki1.Scode != 0 group by cki1.Scode),
+temp3(Scode,new_sum) as 
+(select Scode, sum(sum_pop*avg_value) from temp1 as t1, avg_val_table as t2 
+where t1.age_grp = t2.age_group group by Scode),
+temp4(Sname,value) as 
+(select s1.areaName,x1.new_sum*1.0/x2.count from state_area as s1,temp3 as x1, temp2 as x2 
+where x1.Scode = x2.Scode and x1.Scode = s1.Scode)
+select Sname, value from temp4 where value = (select max(value) from temp4)
+
+####ANS
+
+[('KERALA', 33.185498586746355)]
+
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
